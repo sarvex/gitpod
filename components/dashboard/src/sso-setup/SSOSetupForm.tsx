@@ -5,6 +5,7 @@
  */
 
 import { FunctionComponent, useCallback, useReducer, useState } from "react";
+import cn from "classnames";
 import { TextInput } from "../components/forms/TextInput";
 import { oidcService } from "../service/public-api";
 import Alert from "../components/Alert";
@@ -70,8 +71,8 @@ export const SSOSetupForm: FunctionComponent<SSOSetupFormProps> = ({ token }) =>
 
     return (
         <div>
-            {showSaveError && <Alert type="error">Sorry, there was an error saving your SSO Configuration</Alert>}
-            <form onSubmit={handleSave}>
+            {showSaveError && <Alert type="error">Sorry, there was an error saving your configuration</Alert>}
+            <form onSubmit={handleSave} className={cn({ "mt-14": !showSaveError })}>
                 <TextInput label="Client ID" value={config.clientID} disabled={saving} onChange={updateClientID} />
                 <TextInput
                     label="Client Secret"

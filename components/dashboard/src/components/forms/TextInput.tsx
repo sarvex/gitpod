@@ -21,7 +21,6 @@ export const TextInput: FunctionComponent<TextInputProps> = memo(
     ({ label, value, id, placeholder, disabled = false, required = false, onChange }) => {
         const maybeId = useId();
         const elementId = id || maybeId;
-        console.log(label, elementId);
 
         const handleChange = useCallback(
             (e) => {

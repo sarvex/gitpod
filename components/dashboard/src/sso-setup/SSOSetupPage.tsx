@@ -36,7 +36,7 @@ const SSOSetupPage = () => {
                 <h1 className="text-3xl">Setup SSO</h1>
             </div>
 
-            <div className="mt-4 w-full max-w-sm">
+            <div className="mt-4 w-full max-w-md">
                 {token ? <SSOSetupForm token={token} /> : <Alert type="error">Invalid Token</Alert>}
             </div>
         </div>

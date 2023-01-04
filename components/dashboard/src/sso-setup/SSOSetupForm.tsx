@@ -65,7 +65,7 @@ export const SSOSetupForm: FunctionComponent<SSOSetupFormProps> = ({ token }) =>
 
             setSaving(false);
         },
-        [config, token],
+        [config],
     );
 
     return (

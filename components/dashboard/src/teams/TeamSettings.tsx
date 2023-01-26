@@ -25,7 +25,7 @@ export function getTeamSettingsMenu(params: { team?: Team; billingMode?: Billing
             link: [`/org-settings`],
         },
     ];
-    if (ssoEnabled) {
+    if (!ssoEnabled) {
         result.push({
             title: "SSO",
             link: [`/sso`],
@@ -34,8 +34,6 @@ export function getTeamSettingsMenu(params: { team?: Team; billingMode?: Billing
             title: "Git Auth",
             link: [`/t/${team?.slug}/git-auth`],
         });
-    }
-    if (ssoEnabled) {
     }
     if (billingMode?.mode !== "none") {
         // The Billing page contains both chargebee and usage-based components, so: always show them!

@@ -65,7 +65,7 @@ export default function TeamSettings() {
         (async () => {
             if (!team) return;
             const members = publicApiTeamMembersToProtocol(
-                (await teamsService.getTeam({ teamId: team!.id })).team?.members || [],
+                (await teamsService.getTeam({ teamId: team?.id })).team?.members || [],
             );
 
             const currentUserInTeam = members.find((member) => member.userId === user?.id);
@@ -179,7 +179,7 @@ export default function TeamSettings() {
             <ConfirmationModal
                 title="Delete Team"
                 buttonText="Delete Team"
-                buttonDisabled={teamNameToDelete !== team!.name}
+                buttonDisabled={teamNameToDelete !== team?.name}
                 visible={modal}
                 warningHead="Warning"
                 warningText="This action cannot be reversed."

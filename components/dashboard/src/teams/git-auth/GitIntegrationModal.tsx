@@ -5,14 +5,12 @@
  */
 
 import { AuthProviderEntry } from "@gitpod/gitpod-protocol";
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import Alert from "../../components/Alert";
-import InfoBox from "../../components/InfoBox";
 import { InputWithCopy } from "../../components/InputWithCopy";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../../components/Modal";
 import { openAuthorizeWindow } from "../../provider-utils";
 import { getGitpodService, gitpodHostUrl } from "../../service/service";
-import { isGitpodIo } from "../../utils";
 import exclamation from "../../images/exclamation.svg";
 import { TextInputField } from "../../components/forms/TextInputField";
 import { InputField } from "../../components/forms/InputField";
@@ -80,13 +78,6 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
         },
         [isNew],
     );
-
-    // "bitbucket.org" is set as host value whenever "Bitbucket" is selected
-    useEffect(() => {
-        if (isNew) {
-            updateHostValue(type === "Bitbucket" ? "bitbucket.org" : "");
-        }
-    }, [isNew, type, updateHostValue]);
 
     // Used to grab latest provider record after a successful activation flow
     const reloadSavedProvider = useCallback(async () => {
@@ -204,27 +195,13 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
                         <SelectInputField label="Provider Type" value={type} onChange={setType}>
                             <option value="GitHub">GitHub</option>
                             <option value="GitLab">GitLab</option>
-                            {!isGitpodIo() && <option value="Bitbucket">Bitbucket</option>}
                             <option value="BitbucketServer">Bitbucket Server</option>
                         </SelectInputField>
-                    )}
-                    {isNew && type === "BitbucketServer" && (
-                        <InfoBox className="my-4 mx-auto">
-                            OAuth 2.0 support in Bitbucket Server was added in version 7.20.{" "}
-                            <a
-                                target="_blank"
-                                href="https://confluence.atlassian.com/bitbucketserver/bitbucket-data-center-and-server-7-20-release-notes-1101934428.html"
-                                rel="noopener noreferrer"
-                                className="gp-link"
-                            >
-                                Learn more
-                            </a>
-                        </InfoBox>
                     )}
                     <TextInputField
                         label="Provider Host Name"
                         value={host}
-                        disabled={!isNew || type === "Bitbucket"}
+                        disabled={!isNew}
                         placeholder={getPlaceholderForIntegrationType(type)}
                         onChange={updateHostValue}
                     />
@@ -289,8 +266,6 @@ const getPlaceholderForIntegrationType = (type: string) => {
             return "gitlab.example.com";
         case "BitbucketServer":
             return "bitbucket.example.com";
-        case "Bitbucket":
-            return "bitbucket.org";
         default:
             return "";
     }

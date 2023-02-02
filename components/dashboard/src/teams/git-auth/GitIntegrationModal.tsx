@@ -35,18 +35,40 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
     const [clientId, setClientId] = useState<string>(props.provider?.oauth.clientId ?? "");
     const [clientSecret, setClientSecret] = useState<string>(props.provider?.oauth.clientSecret ?? "");
 
-    const [redirectURL, setRedirectURL] = useState<string>(
-        props.provider?.oauth.callBackUrl ?? callbackUrl("gitlab.example.com"),
-    );
+    // const [redirectURL, setRedirectURL] = useState<string>(
+    //     props.provider?.oauth.callBackUrl ?? callbackUrl("gitlab.example.com"),
+    // );
 
     const [savedProvider, setSavedProvider] = useState(props.provider);
     const isNew = !savedProvider;
 
-    const [busy, setBusy] = useState<boolean>(false);
+    // This is a readonly value to copy and plug into external oauth config
+    const redirectURL = useMemo(() => {
+        // Default to an example
+        let url = callbackUrl("gitlab.example.com");
+
+        // Once it's saved, use what's stored
+        if (!isNew) {
+            url = savedProvider?.oauth.callBackUrl ?? url;
+        } else {
+            // Otherwise construct it w/ their provided host value
+            url = callbackUrl(host);
+        }
+
+        return url;
+    }, [host, isNew, savedProvider?.oauth.callBackUrl]);
+
+    const [savingProvider, setSavingProvider] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
     const upsertProvider = useUpsertOrgAuthProviderMutation();
-    const invalidateOwnAuthProviders = useInvalidateOrgAuthProvidersQuery(team?.id ?? "");
+    const invalidateOrgAuthProviders = useInvalidateOrgAuthProvidersQuery(team?.id ?? "");
+
+    const {
+        message: hostError,
+        onBlur: hostOnBlurErrorTracking,
+        isValid: hostValid,
+    } = useOnBlurError(`Provider Host Name is missing.`, host.trim().length > 0);
 
     const {
         message: clientIdError,
@@ -60,71 +82,58 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
         isValid: clientSecretValid,
     } = useOnBlurError(`${type === "GitLab" ? "Secret" : "Client Secret"} is missing.`, clientSecret.trim().length > 0);
 
-    // Should do this kind of trimming on blur to avoid mutating value as user types
-    // ditto to the client id/secret updates
-    const updateHostValue = useCallback(
-        (host: string) => {
-            if (isNew) {
-                let newHostValue = host;
+    // Call our error onBlur handler, and remove prefixed "https://"
+    const hostOnBlur = useCallback(() => {
+        hostOnBlurErrorTracking();
 
-                if (host.startsWith("https://")) {
-                    newHostValue = host.replace("https://", "");
-                }
+        if (host.startsWith("https://")) {
+            setHost(host.replace("https://", ""));
+        }
+    }, [host, hostOnBlurErrorTracking]);
 
-                setHost(newHostValue);
-                setRedirectURL(callbackUrl(newHostValue));
-                setErrorMessage(undefined);
-            }
-        },
-        [isNew],
-    );
-
-    // Used to grab latest provider record after a successful activation flow
+    // TODO: We could remove this extra state management if we convert the modal into a detail flow w/ it's own route
+    // Used to grab latest provider record after activation flow
     const reloadSavedProvider = useCallback(async () => {
-        if (!savedProvider) {
+        if (!savedProvider || !team) {
             return;
         }
 
-        const provider = (await getGitpodService().server.getOwnAuthProviders()).find(
+        const provider = (await getGitpodService().server.getOrgAuthProviders({ organizationId: team.id })).find(
             (ap) => ap.id === savedProvider.id,
         );
         if (provider) {
             setSavedProvider(provider);
         }
-    }, [savedProvider]);
+    }, [savedProvider, team]);
 
-    // modal submission
-    // make api call
-    // handle loading/error states
-    //
     const activate = useCallback(async () => {
         if (!team) {
             console.error("no current team selected");
             return;
         }
+        // Set a saving state and clear any error message
+        setSavingProvider(true);
+        setErrorMessage(undefined);
 
         const trimmedId = clientId.trim();
         const trimmedSecret = clientSecret.trim();
 
-        let entry = isNew
-            ? ({
-                  host,
+        let entry: AuthProviderEntry.NewOrgEntry | AuthProviderEntry.UpdateOrgEntry = isNew
+            ? {
+                  host: host.replace("https://", ""),
                   type,
                   clientId: trimmedId,
                   clientSecret: trimmedSecret,
                   // TODO: remove this prop on the rpc method - not used
                   ownerId: props.userId,
                   organizationId: team.id,
-              } as AuthProviderEntry.NewOrgEntry)
-            : ({
-                  id: props.provider?.id,
+              }
+            : {
+                  id: savedProvider.id,
                   clientId: trimmedId,
-                  clientSecret: clientSecret === "redacted" ? undefined : trimmedSecret,
+                  clientSecret: clientSecret === "redacted" ? "" : trimmedSecret,
                   organizationId: team.id,
-              } as AuthProviderEntry.UpdateOrgEntry);
-
-        setBusy(true);
-        setErrorMessage(undefined);
+              };
         try {
             const newProvider = await upsertProvider.mutateAsync({ provider: entry });
 
@@ -140,7 +149,7 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
                 login: props.login,
                 host: newProvider.host,
                 onSuccess: (payload) => {
-                    invalidateOwnAuthProviders();
+                    invalidateOrgAuthProviders();
 
                     props.onClose();
                 },
@@ -160,21 +169,25 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
             console.log(error);
             setErrorMessage("message" in error ? error.message : "Failed to update Git provider");
         }
-        setBusy(false);
+        setSavingProvider(false);
     }, [
         clientId,
         clientSecret,
         host,
-        invalidateOwnAuthProviders,
+        invalidateOrgAuthProviders,
         isNew,
         props,
         reloadSavedProvider,
+        savedProvider?.id,
         team,
         type,
         upsertProvider,
     ]);
 
-    const isValid = useMemo(() => clientIdValid && clientSecretValid, [clientIdValid, clientSecretValid]);
+    const isValid = useMemo(
+        () => clientIdValid && clientSecretValid && hostValid,
+        [clientIdValid, clientSecretValid, hostValid],
+    );
 
     return (
         <Modal visible onClose={props.onClose}>
@@ -192,7 +205,13 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
 
                 <div className="overscroll-contain max-h-96 overflow-y-auto pr-2">
                     {isNew && (
-                        <SelectInputField label="Provider Type" value={type} onChange={setType}>
+                        <SelectInputField
+                            label="Provider Type"
+                            value={type}
+                            onChange={setType}
+                            error={hostError}
+                            onBlur={hostOnBlur}
+                        >
                             <option value="GitHub">GitHub</option>
                             <option value="GitLab">GitLab</option>
                             <option value="BitbucketServer">Bitbucket Server</option>
@@ -203,7 +222,7 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
                         value={host}
                         disabled={!isNew}
                         placeholder={getPlaceholderForIntegrationType(type)}
-                        onChange={updateHostValue}
+                        onChange={setHost}
                     />
 
                     <InputField label="Redirect URL" hint={<RedirectUrlDescription type={type} host={host} />}>
@@ -240,7 +259,7 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
                 )}
             </ModalBody>
             <ModalFooter>
-                <button onClick={activate} disabled={!isValid || busy}>
+                <button onClick={activate} disabled={!isValid || savingProvider}>
                     Activate Integration
                 </button>
             </ModalFooter>

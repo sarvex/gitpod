@@ -14,19 +14,28 @@ type Props = {
     value: string;
     id?: string;
     hint?: ReactNode;
+    error?: ReactNode;
     disabled?: boolean;
     required?: boolean;
     onChange: (newValue: string) => void;
+    onBlur?: () => void;
 };
 
 export const SelectInputField: FunctionComponent<Props> = memo(
-    ({ label, value, id, hint, disabled = false, required = false, children, onChange }) => {
+    ({ label, value, id, hint, error, disabled = false, required = false, children, onChange, onBlur }) => {
         const maybeId = useId();
         const elementId = id || maybeId;
 
         return (
-            <InputField id={elementId} label={label} hint={hint}>
-                <SelectInput id={elementId} value={value} onChange={onChange} disabled={disabled} required={required}>
+            <InputField id={elementId} label={label} hint={hint} error={error}>
+                <SelectInput
+                    id={elementId}
+                    value={value}
+                    onChange={onChange}
+                    disabled={disabled}
+                    required={required}
+                    onBlur={onBlur}
+                >
                     {children}
                 </SelectInput>
             </InputField>
@@ -41,16 +50,19 @@ type SelectInputProps = {
     disabled?: boolean;
     required?: boolean;
     onChange?: (newValue: string) => void;
+    onBlur?: () => void;
 };
 
 export const SelectInput: FunctionComponent<SelectInputProps> = memo(
-    ({ value, className, id, disabled = false, required = false, children, onChange }) => {
+    ({ value, className, id, disabled = false, required = false, children, onChange, onBlur }) => {
         const handleChange = useCallback(
             (e) => {
                 onChange && onChange(e.target.value);
             },
             [onChange],
         );
+
+        const handleBlur = useCallback(() => onBlur && onBlur(), [onBlur]);
 
         return (
             <select
@@ -60,6 +72,7 @@ export const SelectInput: FunctionComponent<SelectInputProps> = memo(
                 disabled={disabled}
                 required={required}
                 onChange={handleChange}
+                onBlur={handleBlur}
             >
                 {children}
             </select>

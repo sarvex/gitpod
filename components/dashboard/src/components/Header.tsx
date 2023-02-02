@@ -4,12 +4,12 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
-import { useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import Separator from "./Separator";
 
 export interface HeaderProps {
-    title: string | React.ReactElement;
-    subtitle: string | React.ReactElement;
+    title: ReactNode;
+    subtitle: ReactNode;
 }
 
 export default function Header(p: HeaderProps) {
@@ -18,7 +18,8 @@ export default function Header(p: HeaderProps) {
             return;
         }
         document.title = `${p.title} — Gitpod`;
-    }, []);
+    }, [p.title]);
+
     return (
         <div className="app-container border-gray-200 dark:border-gray-800">
             <div className="flex pb-8 pt-6">

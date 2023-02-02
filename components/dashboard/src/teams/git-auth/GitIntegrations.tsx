@@ -6,11 +6,11 @@
 
 import { FunctionComponent } from "react";
 import { SpinnerLoader } from "../../components/Loader";
-import { useOwnAuthProvidersQuery } from "../../data/auth-providers/own-auth-providers-query";
+import { useOrgAuthProvidersQuery } from "../../data/auth-providers/org-auth-providers-query";
 import { GitIntegrationsList } from "./GitIntegrationsList";
 
 export const GitIntegrations: FunctionComponent = () => {
-    const { data, isLoading } = useOwnAuthProvidersQuery();
+    const { data, isLoading } = useOrgAuthProvidersQuery();
 
     return (
         <div>

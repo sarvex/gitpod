@@ -11,10 +11,9 @@ import { BillingMode } from "@gitpod/gitpod-protocol/lib/billing-mode";
 import { PageWithSubMenu } from "../components/PageWithSubMenu";
 import { ReactComponent as Spinner } from "../icons/Spinner.svg";
 import { useCurrentTeam } from "./teams-context";
-import { getTeamSettingsMenu } from "./TeamSettings";
 import { UserContext } from "../user-context";
 import { oidcService, publicApiTeamMembersToProtocol, teamsService } from "../service/public-api";
-import { FeatureFlagContext } from "../contexts/FeatureFlagContext";
+import { useFeatureFlags } from "../contexts/FeatureFlagContext";
 import { OIDCClientConfig } from "@gitpod/public-api/lib/gitpod/experimental/v1/oidc_pb";
 import { getGitpodService, gitpodHostUrl } from "../service/service";
 import { Item, ItemField, ItemFieldContextMenu, ItemFieldIcon, ItemsList } from "../components/ItemsList";
@@ -23,6 +22,7 @@ import Modal from "../components/Modal";
 
 import copy from "../images/copy.svg";
 import exclamation from "../images/exclamation.svg";
+import { getTeamSettingsMenu } from "./TeamSettingsPage";
 
 export default function SSO() {
     const { user } = useContext(UserContext);
@@ -30,7 +30,7 @@ export default function SSO() {
     const [teamBillingMode, setTeamBillingMode] = useState<BillingMode | undefined>(undefined);
     const [isUserOwner, setIsUserOwner] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
-    const { oidcServiceEnabled } = useContext(FeatureFlagContext);
+    const { oidcServiceEnabled, orgGitAuthProviders } = useFeatureFlags();
 
     useEffect(() => {
         if (!team) {
@@ -55,7 +55,12 @@ export default function SSO() {
 
     return (
         <PageWithSubMenu
-            subMenu={getTeamSettingsMenu({ team, billingMode: teamBillingMode, ssoEnabled: oidcServiceEnabled })}
+            subMenu={getTeamSettingsMenu({
+                team,
+                billingMode: teamBillingMode,
+                ssoEnabled: oidcServiceEnabled,
+                orgGitAuthProviders,
+            })}
             title="SSO"
             subtitle="Setup SSO for your organization."
         >

@@ -4,47 +4,18 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
-import { Team } from "@gitpod/gitpod-protocol";
 import { BillingMode } from "@gitpod/gitpod-protocol/lib/billing-mode";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Redirect } from "react-router";
 import Alert from "../components/Alert";
 import ConfirmationModal from "../components/ConfirmationModal";
 import { PageWithSubMenu } from "../components/PageWithSubMenu";
-import { FeatureFlagContext } from "../contexts/FeatureFlagContext";
+import { useFeatureFlags } from "../contexts/FeatureFlagContext";
 import { publicApiTeamMembersToProtocol, teamsService } from "../service/public-api";
 import { getGitpodService, gitpodHostUrl } from "../service/service";
 import { useCurrentUser } from "../user-context";
 import { TeamsContext, useCurrentTeam } from "./teams-context";
-
-export function getTeamSettingsMenu(params: { team?: Team; billingMode?: BillingMode; ssoEnabled?: boolean }) {
-    const { billingMode, ssoEnabled } = params;
-    const result = [
-        {
-            title: "General",
-            link: [`/org-settings`],
-        },
-    ];
-    if (!ssoEnabled) {
-        result.push({
-            title: "SSO",
-            link: [`/sso`],
-        });
-    }
-    result.push({
-        title: "Git Auth",
-        // TODO: make this a better url
-        link: [`/org-git-auth`],
-    });
-    if (billingMode?.mode !== "none") {
-        // The Billing page contains both chargebee and usage-based components, so: always show them!
-        result.push({
-            title: "Billing",
-            link: [`/org-billing`],
-        });
-    }
-    return result;
-}
+import { getTeamSettingsMenu } from "./TeamSettingsPage";
 
 export default function TeamSettings() {
     const user = useCurrentUser();
@@ -57,7 +28,7 @@ export default function TeamSettings() {
     const [isUserOwner, setIsUserOwner] = useState(true);
     const [billingMode, setBillingMode] = useState<BillingMode | undefined>(undefined);
     const [updated, setUpdated] = useState(false);
-    const { oidcServiceEnabled } = useContext(FeatureFlagContext);
+    const { oidcServiceEnabled, orgGitAuthProviders } = useFeatureFlags();
 
     const close = () => setModal(false);
 
@@ -130,7 +101,12 @@ export default function TeamSettings() {
     return (
         <>
             <PageWithSubMenu
-                subMenu={getTeamSettingsMenu({ team, billingMode, ssoEnabled: oidcServiceEnabled })}
+                subMenu={getTeamSettingsMenu({
+                    team,
+                    billingMode,
+                    ssoEnabled: oidcServiceEnabled,
+                    orgGitAuthProviders,
+                })}
                 title="Settings"
                 subtitle="Manage general organization settings."
             >

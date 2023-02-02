@@ -17,8 +17,10 @@ import exclamation from "../../images/exclamation.svg";
 import { TextInputField } from "../../components/forms/TextInputField";
 import { InputField } from "../../components/forms/InputField";
 import { SelectInputField } from "../../components/forms/SelectInputField";
-import { useUpsertAuthProviderMutation } from "../../data/auth-providers/upsert-auth-provider-mutation";
-import { useInvalidateOwnAuthProvidersQuery } from "../../data/auth-providers/own-auth-providers-query";
+import { useUpsertOrgAuthProviderMutation } from "../../data/auth-providers/upsert-org-auth-provider-mutation";
+import { useInvalidateOrgAuthProvidersQuery } from "../../data/auth-providers/org-auth-providers-query";
+import { useCurrentTeam } from "../teams-context";
+import { useOnBlurError } from "../../hooks/use-onblur-error";
 
 type Props = {
     provider?: AuthProviderEntry;
@@ -29,6 +31,7 @@ type Props = {
 };
 
 export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
+    const team = useCurrentTeam();
     const [type, setType] = useState<string>(props.provider?.type ?? "GitLab");
     const [host, setHost] = useState<string>(props.provider?.host ?? "");
     const [clientId, setClientId] = useState<string>(props.provider?.oauth.clientId ?? "");
@@ -44,8 +47,8 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
-    const upsertProvider = useUpsertAuthProviderMutation();
-    const invalidateOwnAuthProviders = useInvalidateOwnAuthProvidersQuery();
+    const upsertProvider = useUpsertOrgAuthProviderMutation();
+    const invalidateOwnAuthProviders = useInvalidateOrgAuthProvidersQuery(team?.id ?? "");
 
     const {
         message: clientIdError,
@@ -104,6 +107,11 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
     // handle loading/error states
     //
     const activate = useCallback(async () => {
+        if (!team) {
+            console.error("no current team selected");
+            return;
+        }
+
         const trimmedId = clientId.trim();
         const trimmedSecret = clientSecret.trim();
 
@@ -113,14 +121,16 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
                   type,
                   clientId: trimmedId,
                   clientSecret: trimmedSecret,
+                  // TODO: remove this prop on the rpc method - not used
                   ownerId: props.userId,
-              } as AuthProviderEntry.NewEntry)
+                  organizationId: team.id,
+              } as AuthProviderEntry.NewOrgEntry)
             : ({
                   id: props.provider?.id,
-                  ownerId: props.userId,
                   clientId: trimmedId,
                   clientSecret: clientSecret === "redacted" ? undefined : trimmedSecret,
-              } as AuthProviderEntry.UpdateEntry);
+                  organizationId: team.id,
+              } as AuthProviderEntry.UpdateOrgEntry);
 
         setBusy(true);
         setErrorMessage(undefined);
@@ -133,8 +143,6 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
             // the server is checking periodically for updates of dynamic providers, thus we need to
             // wait at least 2 seconds for the changes to be propagated before we try to use this provider.
             await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            // onUpdate();
 
             // just open the authorization window and do *not* await
             openAuthorizeWindow({
@@ -170,6 +178,7 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
         isNew,
         props,
         reloadSavedProvider,
+        team,
         type,
         upsertProvider,
     ]);
@@ -329,14 +338,4 @@ const RedirectUrlDescription: FunctionComponent<RedirectUrlDescriptionProps> = (
             .
         </span>
     );
-};
-
-const useOnBlurError = (message: string, isValid: boolean) => {
-    const [hasBlurred, setHasBlurred] = useState(false);
-
-    const onBlur = useCallback(() => {
-        setHasBlurred(true);
-    }, []);
-
-    return { message: !isValid && hasBlurred ? message : "", isValid, onBlur };
 };

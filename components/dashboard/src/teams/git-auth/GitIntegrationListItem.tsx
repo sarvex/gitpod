@@ -9,7 +9,7 @@ import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { ContextMenuEntry } from "../../components/ContextMenu";
 import { Item, ItemField, ItemFieldContextMenu, ItemFieldIcon } from "../../components/ItemsList";
-import { useDeleteAuthProviderMutation } from "../../data/auth-providers/delete-auth-provider-mutation";
+import { useDeleteOrgAuthProviderMutation } from "../../data/auth-providers/delete-org-auth-provider-mutation";
 import { useCurrentUser } from "../../user-context";
 import { GitIntegrationModal } from "./GitIntegrationModal";
 
@@ -21,7 +21,7 @@ export const GitIntegrationListItem: FunctionComponent<Props> = ({ provider }) =
     const user = useCurrentUser();
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-    const deleteAuthProvider = useDeleteAuthProviderMutation();
+    const deleteAuthProvider = useDeleteOrgAuthProviderMutation();
 
     const menuEntries = useMemo(() => {
         const result: ContextMenuEntry[] = [];

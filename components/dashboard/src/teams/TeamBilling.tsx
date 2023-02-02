@@ -17,7 +17,7 @@ import DropDown from "../components/DropDown";
 import { PageWithSubMenu } from "../components/PageWithSubMenu";
 import PillLabel from "../components/PillLabel";
 import SolidCard from "../components/SolidCard";
-import { FeatureFlagContext } from "../contexts/FeatureFlagContext";
+import { useFeatureFlags } from "../contexts/FeatureFlagContext";
 import { getExperimentsClient } from "../experiments/client";
 import { ReactComponent as Spinner } from "../icons/Spinner.svg";
 import { ReactComponent as CheckSvg } from "../images/check.svg";
@@ -26,7 +26,7 @@ import { publicApiTeamMembersToProtocol, teamsService } from "../service/public-
 import { getGitpodService } from "../service/service";
 import { UserContext } from "../user-context";
 import { useCurrentTeam } from "./teams-context";
-import { getTeamSettingsMenu } from "./TeamSettings";
+import { getTeamSettingsMenu } from "./TeamSettingsPage";
 import TeamUsageBasedBilling from "./TeamUsageBasedBilling";
 
 type PendingPlan = Plan & { pendingSince: number };
@@ -42,7 +42,7 @@ export default function TeamBilling() {
     const [teamBillingMode, setTeamBillingMode] = useState<BillingMode | undefined>(undefined);
     const [pendingTeamPlan, setPendingTeamPlan] = useState<PendingPlan | undefined>();
     const [pollTeamSubscriptionTimeout, setPollTeamSubscriptionTimeout] = useState<NodeJS.Timeout | undefined>();
-    const { oidcServiceEnabled } = useContext(FeatureFlagContext);
+    const { oidcServiceEnabled, orgGitAuthProviders } = useFeatureFlags();
 
     useEffect(() => {
         if (!team) {
@@ -345,7 +345,12 @@ export default function TeamBilling() {
     const showUBP = BillingMode.showUsageBasedBilling(teamBillingMode);
     return (
         <PageWithSubMenu
-            subMenu={getTeamSettingsMenu({ team, billingMode: teamBillingMode, ssoEnabled: oidcServiceEnabled })}
+            subMenu={getTeamSettingsMenu({
+                team,
+                billingMode: teamBillingMode,
+                ssoEnabled: oidcServiceEnabled,
+                orgGitAuthProviders,
+            })}
             title="Billing"
             subtitle="Configure and manage billing for your organization."
         >

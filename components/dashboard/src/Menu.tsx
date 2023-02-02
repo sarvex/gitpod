@@ -19,16 +19,16 @@ import ContextMenu, { ContextMenuEntry } from "./components/ContextMenu";
 import Separator from "./components/Separator";
 import PillMenuItem from "./components/PillMenuItem";
 import TabMenuItem from "./components/TabMenuItem";
-import { getTeamSettingsMenu } from "./teams/TeamSettings";
 import { getProjectSettingsMenu } from "./projects/ProjectSettings";
 import { ProjectContext } from "./projects/project-context";
 import { PaymentContext } from "./payment-context";
 import FeedbackFormModal from "./feedback-form/FeedbackModal";
 import { inResource, isGitpodIo } from "./utils";
 import { BillingMode } from "@gitpod/gitpod-protocol/lib/billing-mode";
-import { FeatureFlagContext } from "./contexts/FeatureFlagContext";
+import { useFeatureFlags } from "./contexts/FeatureFlagContext";
 import { publicApiTeamMembersToProtocol, teamsService } from "./service/public-api";
 import { listAllProjects } from "./service/public-api";
+import { getTeamSettingsMenu } from "./teams/TeamSettingsPage";
 
 interface Entry {
     title: string;
@@ -38,7 +38,7 @@ interface Entry {
 
 export default function Menu() {
     const { user } = useContext(UserContext);
-    const { showUsageView, oidcServiceEnabled } = useContext(FeatureFlagContext);
+    const { showUsageView, oidcServiceEnabled, orgGitAuthProviders } = useFeatureFlags();
     const teams = useTeams();
     const location = useLocation();
     const team = useCurrentTeam();
@@ -134,7 +134,7 @@ export default function Menu() {
                 teams.map(async (team) => {
                     try {
                         members[team.id] = publicApiTeamMembersToProtocol(
-                            (await teamsService.getTeam({ teamId: team!.id })).team?.members || [],
+                            (await teamsService.getTeam({ teamId: team.id })).team?.members || [],
                         );
                     } catch (error) {
                         console.error("Could not get members of team", team, error);
@@ -252,6 +252,7 @@ export default function Menu() {
                     team,
                     billingMode: teamBillingMode,
                     ssoEnabled: oidcServiceEnabled,
+                    orgGitAuthProviders,
                 }).flatMap((e) => e.link),
             });
         }

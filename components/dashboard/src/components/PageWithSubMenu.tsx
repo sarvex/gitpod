@@ -4,13 +4,14 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
+import { ReactNode } from "react";
 import { useLocation } from "react-router";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 
 export interface PageWithSubMenuProps {
-    title: string;
-    subtitle: string;
+    title: ReactNode;
+    subtitle: ReactNode;
     subMenu: {
         title: string;
         link: string[];

@@ -169,6 +169,7 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
             console.log(error);
             setErrorMessage("message" in error ? error.message : "Failed to update Git provider");
         }
+
         setSavingProvider(false);
     }, [
         clientId,
@@ -190,7 +191,14 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
     );
 
     return (
-        <Modal visible onClose={props.onClose}>
+        <Modal
+            visible
+            onClose={props.onClose}
+            onEnter={() => {
+                activate();
+                return false;
+            }}
+        >
             <ModalHeader>{isNew ? "New Git Integration" : "Git Integration"}</ModalHeader>
             <ModalBody>
                 {!isNew && savedProvider?.status !== "verified" && (

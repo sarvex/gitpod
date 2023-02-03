@@ -4,13 +4,13 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
-import { AuthProviderEntry } from "@gitpod/gitpod-protocol";
+import { GitpodServer } from "@gitpod/gitpod-protocol";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getGitpodService } from "../../service/service";
 import { getOrgAuthProvidersQueryKey } from "./org-auth-providers-query";
 
 type UpdateAuthProviderArgs = {
-    provider: AuthProviderEntry.NewOrgEntry | AuthProviderEntry.UpdateOrgEntry;
+    provider: GitpodServer.CreateOrgAuthProviderParams["entry"] | GitpodServer.UpdateOrgAuthProviderParams["entry"];
 };
 export const useUpsertOrgAuthProviderMutation = () => {
     const queryClient = useQueryClient();

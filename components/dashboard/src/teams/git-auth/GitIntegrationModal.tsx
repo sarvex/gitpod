@@ -118,24 +118,23 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
         const trimmedId = clientId.trim();
         const trimmedSecret = clientSecret.trim();
 
-        let entry: AuthProviderEntry.NewOrgEntry | AuthProviderEntry.UpdateOrgEntry = isNew
-            ? {
-                  host: host.replace("https://", ""),
-                  type,
-                  clientId: trimmedId,
-                  clientSecret: trimmedSecret,
-                  // TODO: remove this prop on the rpc method - not used
-                  ownerId: props.userId,
-                  organizationId: team.id,
-              }
-            : {
-                  id: savedProvider.id,
-                  clientId: trimmedId,
-                  clientSecret: clientSecret === "redacted" ? "" : trimmedSecret,
-                  organizationId: team.id,
-              };
         try {
-            const newProvider = await upsertProvider.mutateAsync({ provider: entry });
+            const newProvider = await upsertProvider.mutateAsync({
+                provider: isNew
+                    ? {
+                          host: host.replace("https://", ""),
+                          type,
+                          clientId: trimmedId,
+                          clientSecret: trimmedSecret,
+                          organizationId: team.id,
+                      }
+                    : {
+                          id: savedProvider.id,
+                          clientId: trimmedId,
+                          clientSecret: clientSecret === "redacted" ? "" : trimmedSecret,
+                          organizationId: team.id,
+                      },
+            });
 
             // switch mode to stay and edit this integration.
             setSavedProvider(newProvider);

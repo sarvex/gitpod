@@ -10,15 +10,12 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 import { ContextMenuEntry } from "../../components/ContextMenu";
 import { Item, ItemField, ItemFieldContextMenu, ItemFieldIcon } from "../../components/ItemsList";
 import { useDeleteOrgAuthProviderMutation } from "../../data/auth-providers/delete-org-auth-provider-mutation";
-import { useCurrentUser } from "../../user-context";
 import { GitIntegrationModal } from "./GitIntegrationModal";
 
 type Props = {
     provider: AuthProviderEntry;
 };
 export const GitIntegrationListItem: FunctionComponent<Props> = ({ provider }) => {
-    // Maybe just do this in the modal?
-    const user = useCurrentUser();
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const deleteAuthProvider = useDeleteOrgAuthProviderMutation();
@@ -83,13 +80,7 @@ export const GitIntegrationListItem: FunctionComponent<Props> = ({ provider }) =
                     onConfirm={deleteProvider}
                 />
             )}
-            {showEditModal && (
-                <GitIntegrationModal
-                    userId={user?.id || "no-user"}
-                    provider={provider}
-                    onClose={() => setShowEditModal(false)}
-                />
-            )}
+            {showEditModal && <GitIntegrationModal provider={provider} onClose={() => setShowEditModal(false)} />}
         </>
     );
 };

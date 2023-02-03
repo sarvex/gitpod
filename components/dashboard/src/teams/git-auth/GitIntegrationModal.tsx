@@ -207,13 +207,7 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
 
                 <div>
                     {isNew && (
-                        <SelectInputField
-                            label="Provider Type"
-                            value={type}
-                            onChange={setType}
-                            error={hostError}
-                            onBlur={hostOnBlur}
-                        >
+                        <SelectInputField label="Provider Type" value={type} onChange={setType}>
                             <option value="GitHub">GitHub</option>
                             <option value="GitLab">GitLab</option>
                             <option value="BitbucketServer">Bitbucket Server</option>
@@ -224,7 +218,9 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
                         value={host}
                         disabled={!isNew}
                         placeholder={getPlaceholderForIntegrationType(type)}
+                        error={hostError}
                         onChange={setHost}
+                        onBlur={hostOnBlur}
                     />
 
                     <InputField label="Redirect URL" hint={<RedirectUrlDescription type={type} host={host} />}>

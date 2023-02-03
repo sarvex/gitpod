@@ -32,10 +32,6 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
     const [clientId, setClientId] = useState<string>(props.provider?.oauth.clientId ?? "");
     const [clientSecret, setClientSecret] = useState<string>(props.provider?.oauth.clientSecret ?? "");
 
-    // const [redirectURL, setRedirectURL] = useState<string>(
-    //     props.provider?.oauth.callBackUrl ?? callbackUrl("gitlab.example.com"),
-    // );
-
     const [savedProvider, setSavedProvider] = useState(props.provider);
     const isNew = !savedProvider;
 

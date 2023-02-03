@@ -9,14 +9,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getGitpodService } from "../../service/service";
 import { getOrgAuthProvidersQueryKey } from "./org-auth-providers-query";
 
-type UpdateAuthProviderArgs = {
+type UpsertAuthProviderArgs = {
     provider: GitpodServer.CreateOrgAuthProviderParams["entry"] | GitpodServer.UpdateOrgAuthProviderParams["entry"];
 };
 export const useUpsertOrgAuthProviderMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ provider }: UpdateAuthProviderArgs) => {
+        mutationFn: async ({ provider }: UpsertAuthProviderArgs) => {
             if ("id" in provider) {
                 return await getGitpodService().server.updateOrgAuthProvider({ entry: provider });
             } else {

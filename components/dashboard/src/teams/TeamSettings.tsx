@@ -36,7 +36,7 @@ export default function TeamSettings() {
         (async () => {
             if (!team) return;
             const members = publicApiTeamMembersToProtocol(
-                (await teamsService.getTeam({ teamId: team?.id })).team?.members || [],
+                (await teamsService.getTeam({ teamId: team.id })).team?.members || [],
             );
 
             const currentUserInTeam = members.find((member) => member.userId === user?.id);

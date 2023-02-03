@@ -4,20 +4,26 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
-import { BillingMode } from "@gitpod/gitpod-protocol/lib/billing-mode";
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import { Redirect } from "react-router";
+import React, { FunctionComponent, useCallback, useContext, useState } from "react";
 import Alert from "../components/Alert";
 import ConfirmationModal from "../components/ConfirmationModal";
-import { PageWithSubMenu } from "../components/PageWithSubMenu";
-import { useFeatureFlags } from "../contexts/FeatureFlagContext";
-import { publicApiTeamMembersToProtocol, teamsService } from "../service/public-api";
+import { teamsService } from "../service/public-api";
 import { getGitpodService, gitpodHostUrl } from "../service/service";
 import { useCurrentUser } from "../user-context";
 import { TeamsContext, useCurrentTeam } from "./teams-context";
-import { getTeamSettingsMenu } from "./TeamSettingsPage";
+// TODO: rename this base component to avoid conflicts
+import { TeamSettingsPage as BaseTeamSettingsPage } from "./TeamSettingsPage";
 
-export default function TeamSettings() {
+// TODO: need to rename the base component
+export default function TeamSettingsPage() {
+    return (
+        <BaseTeamSettingsPage title="Settings" subtitle="Manage general organization settings." restrictToOwner>
+            <TeamSettings />
+        </BaseTeamSettingsPage>
+    );
+}
+
+const TeamSettings: FunctionComponent = () => {
     const user = useCurrentUser();
     const team = useCurrentTeam();
     const { teams, setTeams } = useContext(TeamsContext);
@@ -25,28 +31,9 @@ export default function TeamSettings() {
     const [teamNameToDelete, setTeamNameToDelete] = useState("");
     const [teamName, setTeamName] = useState(team?.name || "");
     const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
-    const [isUserOwner, setIsUserOwner] = useState(true);
-    const [billingMode, setBillingMode] = useState<BillingMode | undefined>(undefined);
     const [updated, setUpdated] = useState(false);
-    const { oidcServiceEnabled, orgGitAuthProviders } = useFeatureFlags();
 
     const close = () => setModal(false);
-
-    useEffect(() => {
-        (async () => {
-            if (!team) return;
-            const members = publicApiTeamMembersToProtocol(
-                (await teamsService.getTeam({ teamId: team.id })).team?.members || [],
-            );
-
-            const currentUserInTeam = members.find((member) => member.userId === user?.id);
-            setIsUserOwner(currentUserInTeam?.role === "owner");
-
-            // TODO(gpl) Maybe we should have TeamContext here instead of repeating ourselves...
-            const billingMode = await getGitpodService().server.getBillingModeForTeam(team.id);
-            setBillingMode(billingMode);
-        })();
-    }, [team, user]);
 
     const updateTeamInformation = useCallback(async () => {
         if (!team || errorMessage || !teams) {
@@ -94,63 +81,48 @@ export default function TeamSettings() {
         document.location.href = gitpodHostUrl.asDashboard().toString();
     }, [team, user]);
 
-    if (!isUserOwner) {
-        return <Redirect to="/" />;
-    }
-
     return (
-        <>
-            <PageWithSubMenu
-                subMenu={getTeamSettingsMenu({
-                    team,
-                    billingMode,
-                    ssoEnabled: oidcServiceEnabled,
-                    orgGitAuthProviders,
-                })}
-                title="Settings"
-                subtitle="Manage general organization settings."
-            >
-                <h3>Organization Name</h3>
-                <p className="text-base text-gray-500 max-w-2xl">
-                    This is your organization's visible name within Gitpod. For example, the name of your company.
-                </p>
-                {errorMessage && (
-                    <Alert type="error" closable={true} className="mb-2 max-w-xl rounded-md">
-                        {errorMessage}
-                    </Alert>
-                )}
-                {updated && (
-                    <Alert type="message" closable={true} className="mb-2 max-w-xl rounded-md">
-                        Organization name has been updated.
-                    </Alert>
-                )}
-                <div className="flex flex-col lg:flex-row">
-                    <div>
-                        <div className="mt-4 mb-3">
-                            <h4>Name</h4>
-                            <input type="text" value={teamName} onChange={onNameChange} />
-                        </div>
+        <div>
+            <h3>Organization Name</h3>
+            <p className="text-base text-gray-500 max-w-2xl">
+                This is your organization's visible name within Gitpod. For example, the name of your company.
+            </p>
+            {errorMessage && (
+                <Alert type="error" closable={true} className="mb-2 max-w-xl rounded-md">
+                    {errorMessage}
+                </Alert>
+            )}
+            {updated && (
+                <Alert type="message" closable={true} className="mb-2 max-w-xl rounded-md">
+                    Organization name has been updated.
+                </Alert>
+            )}
+            <div className="flex flex-col lg:flex-row">
+                <div>
+                    <div className="mt-4 mb-3">
+                        <h4>Name</h4>
+                        <input type="text" value={teamName} onChange={onNameChange} />
                     </div>
                 </div>
-                <div className="flex flex-row">
-                    <button
-                        className="primary"
-                        disabled={team?.name === teamName || !!errorMessage}
-                        onClick={updateTeamInformation}
-                    >
-                        Update Organization Name
-                    </button>
-                </div>
-
-                <h3 className="pt-12">Delete Organization</h3>
-                <p className="text-base text-gray-500 pb-4 max-w-2xl">
-                    Deleting this organization will also remove all associated data, including projects and workspaces.
-                    Deleted organizations cannot be restored!
-                </p>
-                <button className="danger secondary" onClick={() => setModal(true)}>
-                    Delete Organization
+            </div>
+            <div className="flex flex-row">
+                <button
+                    className="primary"
+                    disabled={team?.name === teamName || !!errorMessage}
+                    onClick={updateTeamInformation}
+                >
+                    Update Organization Name
                 </button>
-            </PageWithSubMenu>
+            </div>
+
+            <h3 className="pt-12">Delete Organization</h3>
+            <p className="text-base text-gray-500 pb-4 max-w-2xl">
+                Deleting this organization will also remove all associated data, including projects and workspaces.
+                Deleted organizations cannot be restored!
+            </p>
+            <button className="danger secondary" onClick={() => setModal(true)}>
+                Delete Organization
+            </button>
 
             <ConfirmationModal
                 title="Delete Team"
@@ -185,6 +157,6 @@ export default function TeamSettings() {
                     onChange={(e) => setTeamNameToDelete(e.target.value)}
                 ></input>
             </ConfirmationModal>
-        </>
+        </div>
     );
-}
+};

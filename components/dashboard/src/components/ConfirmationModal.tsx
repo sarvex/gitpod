@@ -54,9 +54,7 @@ export default function ConfirmationModal(props: {
                 return true;
             }}
         >
-            <p key="areYouSure" className="mb-3 text-base text-gray-500">
-                {props.areYouSureText}
-            </p>
+            <p className="mb-3 text-base text-gray-500">{props.areYouSureText}</p>
             {props.warningText && (
                 <Alert type="warning" className="mb-4">
                     <strong>{props.warningHead}</strong>
@@ -65,7 +63,7 @@ export default function ConfirmationModal(props: {
                 </Alert>
             )}
             {isEntity(props.children) ? (
-                <div key="entity" className="w-full p-4 mb-2 bg-gray-100 dark:bg-gray-700 rounded-xl group">
+                <div className="w-full p-4 mb-2 bg-gray-100 dark:bg-gray-700 rounded-xl group">
                     <p className="text-base text-gray-800 dark:text-gray-100 font-semibold">{props.children.name}</p>
                     {props.children.description && (
                         <p className="text-gray-500 truncate">{props.children.description}</p>

@@ -22,7 +22,6 @@ import { useOnBlurError } from "../../hooks/use-onblur-error";
 
 type Props = {
     provider?: AuthProviderEntry;
-    userId: string;
     onClose: () => void;
 };
 

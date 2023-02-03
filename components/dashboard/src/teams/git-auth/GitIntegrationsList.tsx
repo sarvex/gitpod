@@ -7,7 +7,6 @@
 import { AuthProviderEntry } from "@gitpod/gitpod-protocol";
 import { FunctionComponent, useCallback, useState } from "react";
 import { ItemsList } from "../../components/ItemsList";
-import { useCurrentUser } from "../../user-context";
 import { GitIntegrationListItem } from "./GitIntegrationListItem";
 import { GitIntegrationModal } from "./GitIntegrationModal";
 
@@ -15,10 +14,10 @@ type Props = {
     providers: AuthProviderEntry[];
 };
 export const GitIntegrationsList: FunctionComponent<Props> = ({ providers }) => {
-    const user = useCurrentUser();
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const onCreate = useCallback(() => setShowCreateModal(true), []);
+    const hideModal = useCallback(() => setShowCreateModal(false), []);
 
     return (
         <>
@@ -48,13 +47,7 @@ export const GitIntegrationsList: FunctionComponent<Props> = ({ providers }) => 
                     </ItemsList>
                 </>
             )}
-            {showCreateModal && (
-                <GitIntegrationModal
-                    // Push this into the modal, why a prop?
-                    userId={user?.id || "no-user"}
-                    onClose={() => setShowCreateModal(false)}
-                />
-            )}
+            {showCreateModal && <GitIntegrationModal onClose={hideModal} />}
         </>
     );
 };

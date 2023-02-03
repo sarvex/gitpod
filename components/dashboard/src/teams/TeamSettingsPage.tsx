@@ -84,8 +84,7 @@ export function getTeamSettingsMenu(params: {
     if (orgGitAuthProviders) {
         result.push({
             title: "Git Integrations",
-            // TODO: make this a better url
-            link: [`/org-git-auth`],
+            link: [`/org-settings/git-integrations`],
         });
     }
     if (ssoEnabled) {

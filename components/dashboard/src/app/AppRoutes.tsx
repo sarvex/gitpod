@@ -65,7 +65,7 @@ const Members = React.lazy(() => import(/* webpackPrefetch: true */ "../teams/Me
 const TeamSettings = React.lazy(() => import(/* webpackPrefetch: true */ "../teams/TeamSettings"));
 const TeamBilling = React.lazy(() => import(/* webpackPrefetch: true */ "../teams/TeamBilling"));
 const SSO = React.lazy(() => import(/* webpackPrefetch: true */ "../teams/SSO"));
-const TeamsGitAuth = React.lazy(() => import(/* webpackPrefetch: true */ "../teams/GitAuth"));
+const TeamGitIntegrations = React.lazy(() => import(/* webpackPrefetch: true */ "../teams/GitIntegrations"));
 const NewProject = React.lazy(() => import(/* webpackPrefetch: true */ "../projects/NewProject"));
 const Projects = React.lazy(() => import(/* webpackPrefetch: true */ "../projects/Projects"));
 const Project = React.lazy(() => import(/* webpackPrefetch: true */ "../projects/Project"));
@@ -227,8 +227,7 @@ export const AppRoutes: FunctionComponent<AppRoutesProps> = ({ user, teams }) =>
                     <Route exact path="/projects" component={Projects} />
                     <Route exact path="/org-settings" component={TeamSettings} />
                     <Route exact path="/org-billing" component={TeamBilling} />
-                    {/* TODO: Come up w/ a better route for this */}
-                    <Route exact path="/org-git-auth" component={TeamsGitAuth} />
+                    <Route exact path="/org-settings/git-integrations" component={TeamGitIntegrations} />
                     <Route exact path="/sso" component={SSO} />
                     <Route exact path={`/projects/:projectSlug`} component={Project} />
                     <Route exact path={`/projects/:projectSlug/events`} component={Events} />

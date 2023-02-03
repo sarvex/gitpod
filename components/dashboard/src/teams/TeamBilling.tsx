@@ -4,63 +4,63 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
-import { TeamMemberInfo } from "@gitpod/gitpod-protocol";
 import { BillingMode } from "@gitpod/gitpod-protocol/lib/billing-mode";
 import { Currency, Plan, Plans, PlanType } from "@gitpod/gitpod-protocol/lib/plans";
 import { TeamSubscription2 } from "@gitpod/gitpod-protocol/lib/team-subscription-protocol";
-import React, { useContext, useEffect, useState } from "react";
-import { Redirect } from "react-router";
+import React, { FunctionComponent, useContext, useEffect, useState } from "react";
 import { ChargebeeClient } from "../chargebee/chargebee-client";
 import Alert from "../components/Alert";
 import Card from "../components/Card";
 import DropDown from "../components/DropDown";
-import { PageWithSubMenu } from "../components/PageWithSubMenu";
 import PillLabel from "../components/PillLabel";
 import SolidCard from "../components/SolidCard";
-import { useFeatureFlags } from "../contexts/FeatureFlagContext";
+import { useOrgBillingMode } from "../data/billing-mode/org-billing-mode-query";
+import { useOrganizationMembers } from "../data/organizations/org-members-query";
 import { getExperimentsClient } from "../experiments/client";
 import { ReactComponent as Spinner } from "../icons/Spinner.svg";
 import { ReactComponent as CheckSvg } from "../images/check.svg";
 import { PaymentContext } from "../payment-context";
-import { publicApiTeamMembersToProtocol, teamsService } from "../service/public-api";
 import { getGitpodService } from "../service/service";
-import { UserContext } from "../user-context";
+import { useCurrentUser } from "../user-context";
 import { useCurrentTeam } from "./teams-context";
-import { getTeamSettingsMenu } from "./TeamSettingsPage";
+import { TeamSettingsPage } from "./TeamSettingsPage";
 import TeamUsageBasedBilling from "./TeamUsageBasedBilling";
 
 type PendingPlan = Plan & { pendingSince: number };
 
-export default function TeamBilling() {
-    const { user } = useContext(UserContext);
+export default function TeamBillingPage() {
+    return (
+        <TeamSettingsPage
+            title="Billing"
+            subtitle="Configure and manage billing for your organization."
+            restrictToOwner
+        >
+            <TeamBilling />
+        </TeamSettingsPage>
+    );
+}
+
+const TeamBilling: FunctionComponent = () => {
+    const user = useCurrentUser();
     const team = useCurrentTeam();
-    const [members, setMembers] = useState<TeamMemberInfo[]>([]);
-    const [isUserOwner, setIsUserOwner] = useState(true);
     const [teamSubscription, setTeamSubscription] = useState<TeamSubscription2 | undefined>();
     const { currency, setCurrency } = useContext(PaymentContext);
     const [isUsageBasedBillingEnabled, setIsUsageBasedBillingEnabled] = useState<boolean>(false);
-    const [teamBillingMode, setTeamBillingMode] = useState<BillingMode | undefined>(undefined);
     const [pendingTeamPlan, setPendingTeamPlan] = useState<PendingPlan | undefined>();
     const [pollTeamSubscriptionTimeout, setPollTeamSubscriptionTimeout] = useState<NodeJS.Timeout | undefined>();
-    const { oidcServiceEnabled, orgGitAuthProviders } = useFeatureFlags();
+
+    const { data: teamBillingMode, isLoading: teamBillingModeLoading } = useOrgBillingMode();
+    // TODO: refactor to useOrgMembers() and use current org automatically;
+    const { data: members, isLoading: membersLoading } = useOrganizationMembers({ organizationId: team?.id ?? "" });
 
     useEffect(() => {
         if (!team) {
             return;
         }
         (async () => {
-            const [memberInfos, subscription, teamBillingMode] = await Promise.all([
-                teamsService.getTeam({ teamId: team!.id }).then((resp) => {
-                    return publicApiTeamMembersToProtocol(resp.team?.members || []);
-                }),
-                getGitpodService().server.getTeamSubscription(team.id),
-                getGitpodService().server.getBillingModeForTeam(team.id),
-            ]);
-            setMembers(memberInfos);
-            const currentUserInTeam = memberInfos.find((member: TeamMemberInfo) => member.userId === user?.id);
-            setIsUserOwner(currentUserInTeam?.role === "owner");
+            const subscription = await getGitpodService().server.getTeamSubscription(team.id);
+
             setTeamSubscription(subscription);
-            setTeamBillingMode(teamBillingMode);
         })();
     }, [team]);
 
@@ -130,7 +130,7 @@ export default function TeamBilling() {
     const availableTeamPlans = Plans.getAvailableTeamPlans(currency || "USD").filter((p) => p.type !== "student");
 
     const checkout = async (plan: Plan) => {
-        if (!team || members.length < 1) {
+        if (!team || (members || []).length < 1) {
             return;
         }
         const chargebeeClient = await ChargebeeClient.getOrCreate(team.id);
@@ -148,7 +148,7 @@ export default function TeamBilling() {
         window.localStorage.setItem(`pendingPlanForTeam${team.id}`, JSON.stringify(pending));
     };
 
-    const isLoading = members.length === 0;
+    const isLoading = teamBillingModeLoading || membersLoading;
     const teamPlan = pendingTeamPlan || Plans.getById(teamSubscription?.planId);
 
     const featuresByPlanType: { [type in PlanType]?: Array<React.ReactNode> } = {
@@ -166,10 +166,6 @@ export default function TeamBilling() {
             <span>3 hr Timeout Boost</span>,
         ],
     };
-
-    if (!isUserOwner) {
-        return <Redirect to={`/`} />;
-    }
 
     function renderTeamBilling(): JSX.Element {
         return (
@@ -244,9 +240,9 @@ export default function TeamBilling() {
                                             </div>
                                             <div className="mt-2">
                                                 <PillLabel type="warn" className="font-semibold normal-case text-sm">
-                                                    {members.length} x {Currency.getSymbol(tp.currency)}
+                                                    {(members || []).length} x {Currency.getSymbol(tp.currency)}
                                                     {tp.pricePerMonth} = {Currency.getSymbol(tp.currency)}
-                                                    {members.length * tp.pricePerMonth} per month
+                                                    {(members || []).length * tp.pricePerMonth} per month
                                                 </PillLabel>
                                             </div>
                                             <div className="mt-4 font-semibold text-sm">Includes:</div>
@@ -304,7 +300,7 @@ export default function TeamBilling() {
                                             Members
                                         </div>
                                         <div className="font-semibold text-base text-gray-600 dark:text-gray-400">
-                                            {members.length}
+                                            {(members || []).length}
                                         </div>
                                         <div className="mt-4 font-medium text-base text-gray-400 dark:text-gray-600">
                                             Next invoice on
@@ -344,17 +340,8 @@ export default function TeamBilling() {
 
     const showUBP = BillingMode.showUsageBasedBilling(teamBillingMode);
     return (
-        <PageWithSubMenu
-            subMenu={getTeamSettingsMenu({
-                team,
-                billingMode: teamBillingMode,
-                ssoEnabled: oidcServiceEnabled,
-                orgGitAuthProviders,
-            })}
-            title="Billing"
-            subtitle="Configure and manage billing for your organization."
-        >
-            {teamBillingMode === undefined ? (
+        <>
+            {isLoading ? (
                 <div className="p-20">
                     <Spinner className="h-5 w-5 animate-spin" />
                 </div>
@@ -364,9 +351,9 @@ export default function TeamBilling() {
                     {!showUBP && renderTeamBilling()}
                 </>
             )}
-        </PageWithSubMenu>
+        </>
     );
-}
+};
 
 function guessNextInvoiceDate(startDate: string): Date {
     const now = new Date();

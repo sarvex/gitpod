@@ -4,77 +4,29 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
-import { useContext, useEffect, useState } from "react";
-import { Redirect } from "react-router";
-import { TeamMemberInfo } from "@gitpod/gitpod-protocol";
-import { BillingMode } from "@gitpod/gitpod-protocol/lib/billing-mode";
-import { PageWithSubMenu } from "../components/PageWithSubMenu";
-import { ReactComponent as Spinner } from "../icons/Spinner.svg";
+import { FunctionComponent, useCallback, useEffect, useState } from "react";
 import { useCurrentTeam } from "./teams-context";
-import { UserContext } from "../user-context";
-import { oidcService, publicApiTeamMembersToProtocol, teamsService } from "../service/public-api";
-import { useFeatureFlags } from "../contexts/FeatureFlagContext";
+import { oidcService } from "../service/public-api";
 import { OIDCClientConfig } from "@gitpod/public-api/lib/gitpod/experimental/v1/oidc_pb";
-import { getGitpodService, gitpodHostUrl } from "../service/service";
+import { gitpodHostUrl } from "../service/service";
 import { Item, ItemField, ItemFieldContextMenu, ItemFieldIcon, ItemsList } from "../components/ItemsList";
 import { ContextMenuEntry } from "../components/ContextMenu";
 import Modal from "../components/Modal";
 
 import copy from "../images/copy.svg";
 import exclamation from "../images/exclamation.svg";
-import { getTeamSettingsMenu } from "./TeamSettingsPage";
+import { TeamSettingsPage } from "./TeamSettingsPage";
 
-export default function SSO() {
-    const { user } = useContext(UserContext);
-    const team = useCurrentTeam();
-    const [teamBillingMode, setTeamBillingMode] = useState<BillingMode | undefined>(undefined);
-    const [isUserOwner, setIsUserOwner] = useState(true);
-    const [isLoading, setIsLoading] = useState(true);
-    const { oidcServiceEnabled, orgGitAuthProviders } = useFeatureFlags();
-
-    useEffect(() => {
-        if (!team) {
-            return;
-        }
-        (async () => {
-            const memberInfos = await teamsService.getTeam({ teamId: team!.id }).then((resp) => {
-                return publicApiTeamMembersToProtocol(resp.team?.members || []);
-            });
-            getGitpodService().server.getBillingModeForTeam(team.id).then(setTeamBillingMode).catch(console.error);
-
-            const currentUserInTeam = memberInfos.find((member: TeamMemberInfo) => member.userId === user?.id);
-            const isUserOwner = currentUserInTeam?.role === "owner";
-            setIsUserOwner(isUserOwner);
-            setIsLoading(false);
-        })();
-    }, [team]);
-
-    if (!isUserOwner) {
-        return <Redirect to={`/`} />;
-    }
-
+export default function SSOPage() {
     return (
-        <PageWithSubMenu
-            subMenu={getTeamSettingsMenu({
-                team,
-                billingMode: teamBillingMode,
-                ssoEnabled: oidcServiceEnabled,
-                orgGitAuthProviders,
-            })}
-            title="SSO"
-            subtitle="Setup SSO for your organization."
-        >
-            {isLoading && (
-                <div className="p-20">
-                    <Spinner className="h-5 w-5 animate-spin" />
-                </div>
-            )}
-            {!isLoading && team && isUserOwner && <OIDCClients organizationId={team.id} />}
-        </PageWithSubMenu>
+        <TeamSettingsPage title="SSO" subtitle="Setup SSO for your organization." restrictToOwner>
+            <OIDCClients />
+        </TeamSettingsPage>
     );
 }
 
-function OIDCClients(props: { organizationId: string }) {
+const OIDCClients: FunctionComponent = () => {
+    const organization = useCurrentTeam();
     const [clientConfigs, setClientConfigs] = useState<OIDCClientConfig[]>([]);
 
     const [modal, setModal] = useState<
@@ -88,14 +40,16 @@ function OIDCClients(props: { organizationId: string }) {
         reloadClientConfigs().catch(console.error);
     }, []);
 
-    const reloadClientConfigs = async () => {
-        const clientConfigs = await oidcService
-            .listClientConfigs({ organizationId: props.organizationId })
-            .then((resp) => {
-                return resp.clientConfigs;
-            });
+    const reloadClientConfigs = useCallback(async () => {
+        if (!organization) {
+            throw new Error("No current organization selected");
+        }
+
+        const clientConfigs = await oidcService.listClientConfigs({ organizationId: organization.id }).then((resp) => {
+            return resp.clientConfigs;
+        });
         setClientConfigs(clientConfigs);
-    };
+    }, [organization]);
 
     const loginWith = (id: string) => {
         window.location.href = gitpodHostUrl.with({ pathname: `/iam/oidc/start`, search: `id=${id}` }).toString();
@@ -126,7 +80,6 @@ function OIDCClients(props: { organizationId: string }) {
             {modal?.mode === "new" && (
                 <OIDCClientConfigModal
                     mode={modal.mode}
-                    organizationId={props.organizationId}
                     onClose={() => setModal(undefined)}
                     onUpdate={reloadClientConfigs}
                 />
@@ -140,16 +93,9 @@ function OIDCClients(props: { organizationId: string }) {
                     <h3>Single sign sign-on with OIDC</h3>
                     <h2>Setup SSO for your organization.</h2>
                 </div>
-                {clientConfigs.length !== 0 ? (
-                    <div className="mt-3 flex mt-0">
-                        <button onClick={() => setModal({ mode: "new" })} className="ml-2">
-                            New OIDC Client
-                        </button>
-                    </div>
-                ) : null}
             </div>
 
-            {clientConfigs.length === 0 && (
+            {clientConfigs.length === 0 ? (
                 <div className="w-full flex h-80 mt-2 rounded-xl bg-gray-100 dark:bg-gray-900">
                     <div className="m-auto text-center">
                         <h3 className="self-center text-gray-500 dark:text-gray-400 mb-4">No OIDC Clients</h3>
@@ -161,6 +107,10 @@ function OIDCClients(props: { organizationId: string }) {
                             New OIDC Client
                         </button>
                     </div>
+                </div>
+            ) : (
+                <div className="mt-3 flex mt-0">
+                    <button onClick={() => setModal({ mode: "new" })}>New OIDC Client</button>
                 </div>
             )}
 
@@ -184,24 +134,23 @@ function OIDCClients(props: { organizationId: string }) {
             </ItemsList>
         </>
     );
-}
+};
 
-function OIDCClientConfigModal(
-    props: (
-        | {
-              mode: "new";
-          }
-        | {
-              mode: "edit";
-              clientConfig: OIDCClientConfig;
-          }
-    ) & {
-        organizationId: string;
-        onClose?: () => void;
-        closeable?: boolean;
-        onUpdate?: () => void;
-    },
-) {
+type OIDCClientConfigModalProps = (
+    | {
+          mode: "new";
+      }
+    | {
+          mode: "edit";
+          clientConfig: OIDCClientConfig;
+      }
+) & {
+    onClose?: () => void;
+    closeable?: boolean;
+    onUpdate?: () => void;
+};
+const OIDCClientConfigModal: FunctionComponent<OIDCClientConfigModalProps> = (props) => {
+    const organization = useCurrentTeam();
     const [mode] = useState<"new" | "edit">("new");
     const [busy] = useState<boolean>(false);
     const [errorMessage] = useState<string | undefined>(undefined);
@@ -241,11 +190,19 @@ function OIDCClientConfigModal(
         }
     };
 
-    const save = async () => {
+    const onClose = useCallback(() => props.onClose && props.onClose(), [props]);
+    const onUpdate = useCallback(() => props.onUpdate && props.onUpdate(), [props]);
+
+    // TODO: Update this to use react-query for loading/mutating data
+    const save = useCallback(async () => {
+        if (!organization) {
+            throw new Error("No current organization selected");
+        }
+
         try {
             const response = await oidcService.createClientConfig({
                 config: {
-                    organizationId: props.organizationId,
+                    organizationId: organization.id,
                     oauth2Config: {
                         clientId: clientId,
                         clientSecret: clientSecret,
@@ -259,10 +216,7 @@ function OIDCClientConfigModal(
             onUpdate();
             onClose();
         } catch (error) {}
-    };
-
-    const onClose = () => props.onClose && props.onClose();
-    const onUpdate = () => props.onUpdate && props.onUpdate();
+    }, [clientId, clientSecret, issuer, onClose, onUpdate, organization]);
 
     return (
         <Modal visible={!!props} onClose={onClose} closeable={props.closeable}>
@@ -304,6 +258,7 @@ function OIDCClientConfigModal(
                                     src={copy}
                                     title="Copy the Redirect URL to clipboard"
                                     className="absolute top-1/3 right-3"
+                                    alt="Copy to clipboard"
                                 />
                             </div>
                         </div>
@@ -337,7 +292,11 @@ function OIDCClientConfigModal(
 
                 {(errorMessage || validationError) && (
                     <div className="flex rounded-md bg-red-600 p-3">
-                        <img className="w-4 h-4 mx-2 my-auto filter-brightness-10" src={exclamation} />
+                        <img
+                            className="w-4 h-4 mx-2 my-auto filter-brightness-10"
+                            src={exclamation}
+                            alt="exclamation mark"
+                        />
                         <span className="text-white">{errorMessage || validationError}</span>
                     </div>
                 )}
@@ -349,4 +308,4 @@ function OIDCClientConfigModal(
             </div>
         </Modal>
     );
-}
+};

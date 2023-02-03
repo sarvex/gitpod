@@ -22,8 +22,6 @@ import { useOnBlurError } from "../../hooks/use-onblur-error";
 
 type Props = {
     provider?: AuthProviderEntry;
-    login?: boolean;
-    headerText?: string;
     userId: string;
     onClose: () => void;
 };
@@ -145,7 +143,7 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
 
             // just open the authorization window and do *not* await
             openAuthorizeWindow({
-                login: props.login,
+                login: false,
                 host: newProvider.host,
                 onSuccess: (payload) => {
                     invalidateOrgAuthProviders();
@@ -203,14 +201,11 @@ export const GitIntegrationModal: FunctionComponent<Props> = (props) => {
                 {!isNew && savedProvider?.status !== "verified" && (
                     <Alert type="warning">You need to activate this integration.</Alert>
                 )}
-                <div className="flex flex-col">
-                    <span className="text-gray-500">
-                        {props.headerText ||
-                            "Configure an integration with a self-managed instance of GitLab, GitHub, or Bitbucket."}
-                    </span>
+                <div className="flex flex-col text-gray-500">
+                    Configure an integration with a self-managed instance of GitLab, GitHub, or Bitbucket.
                 </div>
 
-                <div className="overscroll-contain max-h-96 overflow-y-auto pr-2">
+                <div>
                     {isNew && (
                         <SelectInputField
                             label="Provider Type"

@@ -4,7 +4,7 @@
  * See License.AGPL.txt in the project root for license information.
  */
 
-import { GitIntegrations } from "./git-auth/GitIntegrations";
+import { GitIntegrations } from "./git-integrations/GitIntegrations";
 import { TeamSettingsPage } from "./TeamSettingsPage";
 
 export default function GitAuth() {

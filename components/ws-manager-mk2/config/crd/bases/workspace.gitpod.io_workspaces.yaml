@@ -139,6 +139,12 @@ spec:
                     port:
                       format: int32
                       type: integer
+                    protocol:
+                      default: Http
+                      enum:
+                      - Http
+                      - Https
+                      type: string
                     visibility:
                       default: Owner
                       enum:
@@ -147,6 +153,7 @@ spec:
                       type: string
                   required:
                   - port
+                  - protocol
                   - visibility
                   type: object
                 minItems: 0

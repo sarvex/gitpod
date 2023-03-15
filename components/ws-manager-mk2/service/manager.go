@@ -560,12 +560,17 @@ func (wsm *WorkspaceManagerServer) ControlPort(ctx context.Context, req *wsmanap
 
 		if req.Expose {
 			visibility := workspacev1.AdmissionLevelOwner
+			protocol := workspacev1.PortProtocolHttp
 			if req.Spec.Visibility == wsmanapi.PortVisibility_PORT_VISIBILITY_PUBLIC {
 				visibility = workspacev1.AdmissionLevelEveryone
+			}
+			if req.Spec.Protocol == wsmanapi.PortProtocol_PORT_PROTOCOL_HTTPS {
+				protocol = workspacev1.PortProtocolHttps
 			}
 			ws.Spec.Ports = append(ws.Spec.Ports, workspacev1.PortSpec{
 				Port:       port,
 				Visibility: visibility,
+				Protocol:   protocol,
 			})
 		}
 

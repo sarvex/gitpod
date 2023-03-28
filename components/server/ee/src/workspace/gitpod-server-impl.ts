@@ -657,7 +657,7 @@ export class GitpodServerEEImpl extends GitpodServerImpl {
     async adminDeleteUser(ctx: TraceContext, userId: string): Promise<void> {
         traceAPIParams(ctx, { userId });
 
-        await this.guardAdminAccess("adminDeleteUser", { id: userId }, Permission.ADMIN_USERS);
+        await this.guardAdminAccess("adminDeleteUser", { id: userId }, Permission.ADMIN_ROLE);
 
         try {
             await this.userDeletionService.deleteUser(userId);
@@ -711,7 +711,7 @@ export class GitpodServerEEImpl extends GitpodServerImpl {
     async adminModifyRoleOrPermission(ctx: TraceContext, req: AdminModifyRoleOrPermissionRequest): Promise<User> {
         traceAPIParams(ctx, { req });
 
-        await this.guardAdminAccess("adminModifyRoleOrPermission", { req }, Permission.ADMIN_USERS);
+        await this.guardAdminAccess("adminModifyRoleOrPermission", { req }, Permission.ADMIN_ROLE);
 
         const target = await this.userDB.findUserById(req.id);
         if (!target) {

@@ -31,7 +31,9 @@ type GitFunc func(rsa *integration.RpcClient, git integration.GitClient, workspa
 func TestGitActions(t *testing.T) {
 	userToken, _ := os.LookupEnv("USER_TOKEN")
 	integration.SkipWithoutUsername(t, username)
-	integration.SkipWithoutUserToken(t, userToken)
+
+	// Not presently needed for this set of tests
+	// integration.SkipWithoutUserToken(t, userToken)
 
 	tests := []GitTest{
 		{

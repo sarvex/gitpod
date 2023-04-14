@@ -106,7 +106,9 @@ func TestGitLabContexts(t *testing.T) {
 func runContextTests(t *testing.T, tests []ContextTest) {
 	userToken, _ := os.LookupEnv("USER_TOKEN")
 	integration.SkipWithoutUsername(t, username)
-	integration.SkipWithoutUserToken(t, userToken)
+
+	// Not presently needed for this set of tests
+	// integration.SkipWithoutUserToken(t, userToken)
 
 	f := features.New("context").
 		WithLabel("component", "server").

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/gitpod-io/gitpod/common-go/experiments"
 	"github.com/gitpod-io/gitpod/common-go/log"
 	"github.com/gitpod-io/gitpod/ide-service-api/config"
 	oci_tool "github.com/gitpod-io/gitpod/ide-service/pkg/ocitool"
@@ -51,6 +52,9 @@ func ParseConfig(ctx context.Context, b []byte) (*config.IDEConfig, error) {
 		return nil, err
 	}
 
+	configCatClient := experiments.NewClient()
+	experimentalIdesEnabled := configCatClient.GetBoolValue(ctx, "experimentalIdes", false, experiments.Attributes{})
+
 	for clientId, client := range cfg.IdeOptions.Clients {
 		if err := checkIDEExistsInOptions(cfg, client.DefaultDesktopIDE, config.IDETypeDesktop, fmt.Sprintf("client %s DefaultDesktopIDE", clientId)); err != nil {
 			return nil, err
@@ -90,7 +94,13 @@ func ParseConfig(ctx context.Context, b []byte) (*config.IDEConfig, error) {
 				option.LatestImageVersion = resolvedVersion
 			}
 		}
-		cfg.IdeOptions.Options[id] = option
+
+		// Filter out experimental ides depending on the feature flag
+		if option.Experimental && !experimentalIdesEnabled {
+			delete(cfg.IdeOptions.Options, id)
+		} else {
+			cfg.IdeOptions.Options[id] = option
+		}
 	}
 
 	return &cfg, nil

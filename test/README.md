@@ -65,7 +65,12 @@ If you want to run an entire test suite, the easiest is to use `./test/run.sh`:
 ```
 
 If you're iterating on a single test, the easiest is to use `go test` directly.
-If your integration tests depends on having having a user token available, then you'll have to set `USER_TOKEN` manually (see `test/run.sh` on how to fetch the credentials that are used during our build)
+
+If your integration tests depends on having having a user token available, then you'll have to set `USER_NAME` and `USER_TOKEN`.
+
+This can be done two ways:
+1. Using credentials persisted as secrets (either in Github Actions, or GCP Secret Manager via the `core-dev` project), which vary by job that trigger tests.
+2. Test using your own Github account as the `USER_NAME`, and generate a full access token via https://gitpod.io/user/tokens for a `USER_TOKEN`.
 
 If you want to run the workspace tests against `ws-manager-mk2`, set the `WS_MANAGER_MK2=true` env var when running the tests.
 
@@ -91,6 +96,10 @@ go test -v ./... \
 ```
 
 # Tips
+
+## cannot start workspace: jsonrpc2: code 460 message: Unauthorized
+
+The credentials you're using aren't valid for the corresponding environment.
 
 ## Workspace
 

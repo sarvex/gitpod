@@ -374,19 +374,7 @@ func LaunchWorkspaceWithOptions(t *testing.T, ctx context.Context, opts *LaunchW
 	var resp *protocol.WorkspaceCreationResult
 	for i := 0; i < 3; i++ {
 		t.Logf("attempt to create the workspace: %s, with defaultIde: %s", opts.ContextURL, opts.IDESettings.DefaultIde)
-		// TODO: add a user check to avoid obscure failures
-		// If we try using a user who is not in Github, or the one who created the env, the tests silently fail
-		// impacts TestGitHooks, TestGitActions, and TestGitHubContexts
 
-		// user, uerr := server.GetLoggedInUser(cctx)
-		// if uerr != nil {
-		// 	return nil, nil, xerrors.Errorf("cannot get logged in user: %w", uerr)
-		// }
-		// hasAdmin := slices.Contains(user.RolesOrPermissions, "admin")
-		// if !hasAdmin {
-		// 	return nil, nil, xerrors.Errorf("user lacks get logged in user: %w", uerr)
-		// }
-		// t.Logf("with user identity: %s", user.ID)
 		resp, err = server.CreateWorkspace(cctx, &protocol.CreateWorkspaceOptions{
 			ContextURL:                         opts.ContextURL,
 			IgnoreRunningPrebuild:              true,

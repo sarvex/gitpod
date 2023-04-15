@@ -112,7 +112,11 @@ jobs:
             - name: Deploy Gitpod to the preview environment
               if: github.event.inputs.skip_deploy != 'true'
               id: deploy-gitpod
-              uses: ./.github/actions/deploy-gitpod
+              retry:
+                max-retries: 3
+                delay: 10
+              run: |
+                ./.github/actions/deploy-gitpod
               with:
                   name: ${{ needs.configuration.outputs.name }}
                   sa_key: ${{ secrets.GCP_CREDENTIALS }}

@@ -40,16 +40,14 @@ jobs:
             - name: Set up Cloud SDK
               uses: google-github-actions/setup-gcloud@v1
             - id: auth
-              uses: nick-fields/retry@v2
+              uses: Wandalen/wretry.action@master
               with:
-                max_attempts: 3
-                retry_on: error
-                timeout_seconds: 5
-                token_format: access_token
-                credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
-                command: |
-                  google-github-actions/auth@v1
-
+                attempt_limit: 3
+                attempt_delay: 5000
+                action: google-github-actions/auth@v1
+                with: |
+                  token_format: access_token
+                  credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
             # do this step as early as possible, so that Slack Notify failure has the secret
             - name: Get Secrets from GCP
               id: "secrets"
@@ -99,31 +97,29 @@ jobs:
             - uses: actions/checkout@v3
             - name: Create preview environment infrastructure
               id: create
-              uses: nick-fields/retry@v2
+              uses: Wandalen/wretry.action@master
               with:
-                max_attempts: 3
-                retry_on: error
-                timeout_seconds: 5
-                name: ${{ needs.configuration.outputs.name }}
-                sa_key: ${{ secrets.GCP_CREDENTIALS }}
-                infrastructure_provider: gce
-                large_vm: true
-                command: |
-                  ./.github/actions/preview-create
+                action: ./.github/actions/preview-create
+                attempt_limit: 3
+                attempt_delay: 5000
+                with: |
+                  name: ${{ needs.configuration.outputs.name }}
+                  sa_key: ${{ secrets.GCP_CREDENTIALS }}
+                  infrastructure_provider: gce
+                  large_vm: true
             - name: Deploy Gitpod to the preview environment
               if: github.event.inputs.skip_deploy != 'true'
               id: deploy-gitpod
-              uses: nick-fields/retry@v2
+              uses: Wandalen/wretry.action@master
               with:
-                max_attempts: 3
-                retry_on: error
-                timeout_seconds: 5
-                name: ${{ needs.configuration.outputs.name }}
-                sa_key: ${{ secrets.GCP_CREDENTIALS }}
-                version: ${{ needs.configuration.outputs.version}}
-                wsmanager_mk2: ${{ github.event.inputs.wsman_mk2 }}
-                command: |
-                  ./.github/actions/deploy-gitpod
+                action: ./.github/actions/deploy-gitpod
+                attempt_limit: 3
+                attempt_delay: 5000
+                with: |
+                  name: ${{ needs.configuration.outputs.name }}
+                  sa_key: ${{ secrets.GCP_CREDENTIALS }}
+                  version: ${{ needs.configuration.outputs.version}}
+                  wsmanager_mk2: ${{ github.event.inputs.wsman_mk2 }}
     check:
         name: Check for regressions
         needs: [configuration, infrastructure]
@@ -143,15 +139,14 @@ jobs:
               name: Set up Cloud SDK
               uses: google-github-actions/setup-gcloud@v1
             - id: auth
-              uses: nick-fields/retry@v2
+              uses: Wandalen/wretry.action@master
               with:
-                max_attempts: 3
-                retry_on: error
-                timeout_seconds: 5
-                token_format: access_token
-                credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
-                command: |
-                  google-github-actions/auth@v1
+                attempt_limit: 3
+                attempt_delay: 5000
+                action: google-github-actions/auth@v1
+                with: |
+                  token_format: access_token
+                  credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
             # do this step as early as possible, so that Slack Notify failure has the secret
             # any earlier, and it conflicts with create previ
             - name: Get Secrets from GCP

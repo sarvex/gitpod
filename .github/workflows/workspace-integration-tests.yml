@@ -40,15 +40,15 @@ jobs:
             - name: Set up Cloud SDK
               uses: google-github-actions/setup-gcloud@v1
             - id: auth
-              retry:
-                max-retries: 3
-                delay: 10
-              continue-on-error: true
+              uses: nick-fields/retry@v2
               with:
+                max_attempts: 3
+                retry_on: error
+                timeout_seconds: 5
                 token_format: access_token
                 credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
-              run: |
-                google-github-actions/auth@v1
+                command: |
+                  google-github-actions/auth@v1
 
             # do this step as early as possible, so that Slack Notify failure has the secret
             - name: Get Secrets from GCP
@@ -99,30 +99,31 @@ jobs:
             - uses: actions/checkout@v3
             - name: Create preview environment infrastructure
               id: create
-              retry:
-                max-retries: 3
-                delay: 10
-              run: |
-                ./.github/actions/preview-create
+              uses: nick-fields/retry@v2
               with:
-                  name: ${{ needs.configuration.outputs.name }}
-                  sa_key: ${{ secrets.GCP_CREDENTIALS }}
-                  infrastructure_provider: gce
-                  large_vm: true
+                max_attempts: 3
+                retry_on: error
+                timeout_seconds: 5
+                name: ${{ needs.configuration.outputs.name }}
+                sa_key: ${{ secrets.GCP_CREDENTIALS }}
+                infrastructure_provider: gce
+                large_vm: true
+                command: |
+                  ./.github/actions/preview-create
             - name: Deploy Gitpod to the preview environment
               if: github.event.inputs.skip_deploy != 'true'
               id: deploy-gitpod
-              retry:
-                max-retries: 3
-                delay: 10
-              run: |
-                ./.github/actions/deploy-gitpod
+              uses: nick-fields/retry@v2
               with:
-                  name: ${{ needs.configuration.outputs.name }}
-                  sa_key: ${{ secrets.GCP_CREDENTIALS }}
-                  version: ${{ needs.configuration.outputs.version}}
-                  wsmanager_mk2: ${{ github.event.inputs.wsman_mk2 }}
-
+                max_attempts: 3
+                retry_on: error
+                timeout_seconds: 5
+                name: ${{ needs.configuration.outputs.name }}
+                sa_key: ${{ secrets.GCP_CREDENTIALS }}
+                version: ${{ needs.configuration.outputs.version}}
+                wsmanager_mk2: ${{ github.event.inputs.wsman_mk2 }}
+                command: |
+                  ./.github/actions/deploy-gitpod
     check:
         name: Check for regressions
         needs: [configuration, infrastructure]
@@ -142,15 +143,15 @@ jobs:
               name: Set up Cloud SDK
               uses: google-github-actions/setup-gcloud@v1
             - id: auth
-              retry:
-                max-retries: 3
-                delay: 10
-              continue-on-error: true
+              uses: nick-fields/retry@v2
               with:
+                max_attempts: 3
+                retry_on: error
+                timeout_seconds: 5
                 token_format: access_token
                 credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
-              run: |
-                google-github-actions/auth@v1
+                command: |
+                  google-github-actions/auth@v1
             # do this step as early as possible, so that Slack Notify failure has the secret
             # any earlier, and it conflicts with create previ
             - name: Get Secrets from GCP

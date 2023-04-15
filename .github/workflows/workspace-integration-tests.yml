@@ -135,10 +135,15 @@ jobs:
               name: Set up Cloud SDK
               uses: google-github-actions/setup-gcloud@v1
             - id: auth
-              uses: google-github-actions/auth@v1
+              retry:
+                max-retries: 3
+                delay: 10
+              continue-on-error: true
               with:
-                  token_format: access_token
-                  credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+                token_format: access_token
+                credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+              run: |
+                google-github-actions/auth@v1
             # do this step as early as possible, so that Slack Notify failure has the secret
             # any earlier, and it conflicts with create previ
             - name: Get Secrets from GCP

@@ -512,6 +512,7 @@ func TestOpenWorkspaceFromPrebuildSerialOnly(t *testing.T) {
 	testEnv.Test(t, f)
 }
 
+// TODO: can take up to 2 minutes to create the pod
 // TestOpenWorkspaceFromOutdatedPrebuild
 // - create a prebuild on older commit
 // - open a workspace from a later commit with a prebuild initializer

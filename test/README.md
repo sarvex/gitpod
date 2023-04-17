@@ -101,6 +101,8 @@ go test -v ./... \
 
 The credentials you're using aren't valid for the corresponding environment.
 
+If you're intending to test with your own SCM ID to test, make sure (1) you've used your ID to log into the preview environment and (2) allow all permissions for your ID in the related integration (Github, or Gitlab or Bitbucket) for whatever you're testing and (3) you've set an access token with full permissions to `USER_TOKEN`.
+
 ## Workspace
 
 ### Where should I start?

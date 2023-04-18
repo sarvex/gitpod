@@ -45,8 +45,6 @@ export interface AdminServer {
     adminFindPrebuilds(params: FindPrebuildsParams): Promise<PrebuildWithStatus[]>;
     adminSetLicense(key: string): Promise<void>;
 
-    adminIsStudent(userId: string): Promise<boolean>;
-    adminAddStudentEmailDomain(userId: string, domain: string): Promise<void>;
     adminGetBillingMode(attributionId: string): Promise<BillingMode>;
 
     adminGetSettings(): Promise<InstallationAdminSettings>;

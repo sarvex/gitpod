@@ -32,7 +32,6 @@ import {
     CommitContext,
     PrebuiltWorkspace,
     WorkspaceInstance,
-    EduEmailDomain,
     ProviderRepository,
     PrebuildWithStatus,
     CreateProjectParams,
@@ -63,7 +62,6 @@ import { PrebuildManager } from "../prebuilds/prebuild-manager";
 import { LicenseDB } from "@gitpod/gitpod-db/lib";
 import { GuardedCostCenter, ResourceAccessGuard, ResourceAccessOp } from "../../../src/auth/resource-access";
 import { BlockedRepository } from "@gitpod/gitpod-protocol/lib/blocked-repositories-protocol";
-import { EligibilityService } from "../user/eligibility-service";
 import { CostCenterJSON, ListUsageRequest, ListUsageResponse } from "@gitpod/gitpod-protocol/lib/usage";
 import {
     CostCenter,
@@ -106,8 +104,6 @@ export class GitpodServerEEImpl extends GitpodServerImpl {
     @inject(LicenseDB) protected readonly licenseDB: LicenseDB;
 
     // per-user state
-    @inject(EligibilityService) protected readonly eligibilityService: EligibilityService;
-
     @inject(EduEmailDomainDB) protected readonly eduDomainDb: EduEmailDomainDB;
 
     @inject(StripeService) protected readonly stripeService: StripeService;
@@ -988,11 +984,6 @@ export class GitpodServerEEImpl extends GitpodServerImpl {
         await this.licenseDB.store(uuidv4(), key);
     }
 
-    public async isStudent(ctx: TraceContext): Promise<boolean> {
-        const user = this.checkUser("isStudent");
-        return this.eligibilityService.isStudent(user);
-    }
-
     async getStripePublishableKey(ctx: TraceContext): Promise<string> {
         this.checkAndBlockUser("getStripePublishableKey");
         const publishableKey = this.config.stripeSecrets?.publishableKey;
@@ -1391,31 +1382,6 @@ export class GitpodServerEEImpl extends GitpodServerImpl {
     }
 
     // (SaaS) – admin
-    async adminIsStudent(ctx: TraceContext, userId: string): Promise<boolean> {
-        traceAPIParams(ctx, { userId });
-
-        const user = this.checkAndBlockUser("adminIsStudent");
-        if (!this.authorizationService.hasPermission(user, Permission.ADMIN_USERS)) {
-            throw new ResponseError(ErrorCodes.PERMISSION_DENIED, "not allowed");
-        }
-
-        return this.eligibilityService.isStudent(userId);
-    }
-
-    async adminAddStudentEmailDomain(ctx: TraceContext, userId: string, domain: string): Promise<void> {
-        traceAPIParams(ctx, { userId, domain });
-
-        const user = this.checkAndBlockUser("adminAddStudentEmailDomain");
-        if (!this.authorizationService.hasPermission(user, Permission.ADMIN_USERS)) {
-            throw new ResponseError(ErrorCodes.PERMISSION_DENIED, "not allowed");
-        }
-
-        const domainEntry: EduEmailDomain = {
-            domain: domain.toLowerCase(),
-        };
-        return this.eduDomainDb.storeDomainEntry(domainEntry);
-    }
-
     async adminGetBillingMode(ctx: TraceContextWithSpan, attributionId: string): Promise<BillingMode> {
         traceAPIParams(ctx, { attributionId });
 

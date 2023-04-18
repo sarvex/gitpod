@@ -7,6 +7,7 @@ package apiv1
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -53,7 +54,12 @@ func (s *OIDCService) CreateClientConfig(ctx context.Context, req *connect.Reque
 		return nil, err
 	}
 
-	err = assertIssuerIsReachable(req.Msg.GetConfig().GetOidcConfig().GetIssuer())
+	oidcConfig := req.Msg.GetConfig().GetOidcConfig()
+	err = assertIssuerIsReachable(oidcConfig.GetIssuer())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	err = assertIssuerProvidesDiscovery(oidcConfig.GetIssuer())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -69,8 +75,6 @@ func (s *OIDCService) CreateClientConfig(ctx context.Context, req *connect.Reque
 	}
 
 	oauth2Config := req.Msg.GetConfig().GetOauth2Config()
-	oidcConfig := req.Msg.GetConfig().GetOidcConfig()
-
 	data, err := db.EncryptJSON(s.cipher, toDbOIDCSpec(oauth2Config, oidcConfig))
 	if err != nil {
 		log.Extract(ctx).WithError(err).Error("Failed to encrypt oidc client config.")
@@ -326,7 +330,7 @@ func toDbOIDCSpec(oauth2Config *v1.OAuth2Config, oidcConfig *v1.OIDCConfig) db.O
 	}
 }
 
-func assertIssuerIsReachable(host string) error {
+func assertIssuerIsReachable(issuer string) error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		Proxy:           http.ProxyFromEnvironment,
@@ -340,11 +344,47 @@ func assertIssuerIsReachable(host string) error {
 		},
 	}
 
-	resp, err := client.Get(host)
+	resp, err := client.Head(issuer)
 	if err != nil {
 		return err
 	}
 	resp.Body.Close()
+	if resp.StatusCode > 499 {
+		return fmt.Errorf("returned status %d", resp.StatusCode)
+	}
+	return nil
+}
+
+func assertIssuerProvidesDiscovery(issuer string) error {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		Proxy:           http.ProxyFromEnvironment,
+	}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   2 * time.Second,
+		// never follow redirects
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	resp, err := client.Get(issuer + "/.well-known/openid-configuration")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("OIDC Discovery is not provided.")
+	}
+
+	var config map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&config)
+	if err != nil {
+		return fmt.Errorf("OIDC Discovery Configuration is not parsable.")
+	}
+
 	if resp.StatusCode > 499 {
 		return fmt.Errorf("returned status %d", resp.StatusCode)
 	}

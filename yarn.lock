@@ -10973,10 +10973,10 @@ nice-grpc-client-middleware-retry@^2.0.1:
     abort-controller-x "^0.4.0"
     nice-grpc-common "^2.0.0"
 
-nice-grpc-common@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/nice-grpc-common/-/nice-grpc-common-2.0.0.tgz#36c9b9cdc38d3b4aa8ad7abf120fd4737eff70ea"
-  integrity sha512-8h/QraeDmScnbKLd5ImS+e7uUDxumvByBo6ILj1jLHjKlIa74WKHNSn54u7RmnJ5tFAYE70iTm8VWyvbTv82yg==
+nice-grpc-common@^2.0.0, nice-grpc-common@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/nice-grpc-common/-/nice-grpc-common-2.0.2.tgz#e6aeebb2bd19d87114b351e291e30d79dd38acf7"
+  integrity sha512-7RNWbls5kAL1QVUOXvBsv1uO0wPQK3lHv+cY1gwkTzirnG1Nop4cBJZubpgziNbaVc/bl9QJcyvsf/NQxa3rjQ==
   dependencies:
     ts-error "^1.0.6"
 

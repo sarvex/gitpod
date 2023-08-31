@@ -63,7 +63,7 @@
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.3",
     "@types/react-portal": "^4.0.4",
-    "@types/react-router": "^5.1.13",
+    "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.1.7",
     "@types/setimmediate": "^1.0.2",
     "@types/uuid": "^8.3.1",

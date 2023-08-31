@@ -16,7 +16,7 @@
   "devDependencies": {
     "@types/sharedworker": "^0.0.29",
     "@types/trusted-types": "^2.0.0",
-    "concurrently": "^6.2.1",
+    "concurrently": "^8.2.1",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
     "source-map-loader": "^4.0.1",

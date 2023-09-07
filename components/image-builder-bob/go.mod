@@ -22,7 +22,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/containerd/continuity v0.4.1 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/gitpod-io/gitpod/components/scrubber v0.0.0-00010101000000-000000000000 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
